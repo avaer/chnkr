@@ -10,6 +10,8 @@ class Chunk {
     this.x = x;
     this.z = z;
     this.lod = lod;
+
+    this.data = null;
   }
 
   equals(chunk) {
