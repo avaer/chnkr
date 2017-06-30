@@ -39,10 +39,9 @@ class Chunker {
       const result = [];
 
       const _addRequiredChunk = (dx, dz, lod) => {
-        const lodRange = (resolution / 2) + ((lod - 1) * resolution);
         const chunk = new Chunk(
-          Math.floor((cx + (dx * lodRange)) / resolution),
-          Math.floor((cz + (dz * lodRange)) / resolution),
+          Math.floor((cx + dx) / resolution),
+          Math.floor((cz + dz) / resolution),
           lod
         );
         result.push(chunk);
@@ -52,20 +51,20 @@ class Chunker {
         const lod = i;
 
         // left
-        for (let z = lod; z > -lod; z--) {
-          _addRequiredChunk(-lod, z, lod);
+        for (let i = 0; i < lod; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution), (resolution / 2) + ((lod - 1) * resolution) - (i * resolution), lod);
         }
         // top
-        for (let x = -lod + 1; x <= lod; x++) {
-          _addRequiredChunk(x, lod, lod);
+        for (let i = 1; i <= lod; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), (resolution / 2) + ((lod - 1) * resolution), lod);
         }
         // right
-        for (let z = lod - 1; z >= -lod; z--) {
-          _addRequiredChunk(lod, z, lod);
+        for (let i = 1; i <= lod; i++) {
+          _addRequiredChunk((resolution / 2) + ((lod - 1) * resolution), (resolution / 2) + ((lod - 1) * resolution) - (i * resolution), lod);
         }
         // bottom
-        for (let x = -lod; x < lod; x++) {
-          _addRequiredChunk(x, -lod, lod);
+        for (let i = 0; i < lod; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), -(resolution / 2) + -((lod - 1) * resolution), lod);
         }
       }
       return result;
