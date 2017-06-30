@@ -50,22 +50,23 @@ class Chunker {
 
       for (let radius = 1; radius <= range; radius++) {
         const lod = useLods ? radius : 1;
+        const baseDistance = (resolution / 2) + ((radius - 1) * resolution);
 
         // left
         for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution), -(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), lod);
+          _addRequiredChunk(-baseDistance, -baseDistance + (i * resolution), lod);
         }
         // front
         for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), -(resolution / 2) + -((radius - 1) * resolution), lod);
+          _addRequiredChunk(-baseDistance + (i * resolution), -baseDistance, lod);
         }
         // right
         for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk((resolution / 2) + ((radius - 1) * resolution), -(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), lod);
+          _addRequiredChunk(baseDistance, -baseDistance + (i * resolution), lod);
         }
         // back
         for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), (resolution / 2) + ((radius - 1) * resolution), lod);
+          _addRequiredChunk(-baseDistance + (i * resolution), baseDistance, lod);
         }
       }
       return result;
