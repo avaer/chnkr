@@ -52,7 +52,7 @@ class Chunker {
 
         // left
         for (let i = 0; i < (lod * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution), (resolution / 2) + ((lod - 1) * resolution) - (i * resolution), lod);
+          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution), -(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), lod);
         }
         // front
         for (let i = 1; i <= (lod * 2) - 1; i++) {
@@ -60,7 +60,7 @@ class Chunker {
         }
         // right
         for (let i = 1; i <= (lod * 2) - 1; i++) {
-          _addRequiredChunk((resolution / 2) + ((lod - 1) * resolution), (resolution / 2) + ((lod - 1) * resolution) - (i * resolution), lod);
+          _addRequiredChunk((resolution / 2) + ((lod - 1) * resolution), -(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), lod);
         }
         // back
         for (let i = 0; i < (lod * 2) - 1; i++) {
