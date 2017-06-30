@@ -44,7 +44,7 @@ class Chunker {
     // find required chunks
     const requiredChunks = (() => {
       const result = [];
-      for (let i = 0; i < lods; i++) {
+      for (let i = 1; i <= lods; i++) {
         const lod = i;
         const lodRange = (resolution / 2) + ((lod - 1) * resolution);
 
