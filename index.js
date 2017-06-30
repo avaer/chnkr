@@ -1,10 +1,3 @@
-const DIAGONAL_DIRECTIONS = [
-  [-1, 1],
-  [1, 1],
-  [-1, -1],
-  [1, -1],
-];
-
 class Chunk {
   constructor(x, z, lod) {
     this.x = x;
@@ -44,16 +37,36 @@ class Chunker {
     // find required chunks
     const requiredChunks = (() => {
       const result = [];
-      for (let i = 1; i <= lods; i++) {
-        const lod = i;
-        const lodRange = (resolution / 2) + ((lod - 1) * resolution);
 
-        const lodRequiredChunks = DIAGONAL_DIRECTIONS.map(([dx, dz]) => new Chunk(
+      const _addRequiredChunk = (dx, dz, lod) => {
+        const lodRange = (resolution / 2) + ((lod - 1) * resolution);
+        const chunk = new Chunk(
           Math.floor((cx + (dx * lodRange)) / resolution),
           Math.floor((cz + (dz * lodRange)) / resolution),
           lod
-        ));
-        result.push.apply(result, lodRequiredChunks);
+        );
+        result.push(chunk);
+      };
+
+      for (let i = 1; i <= lods; i++) {
+        const lod = i;
+
+        // left
+        for (let z = lod; z > -lod; z--) {
+          _addRequiredChunk(-lod, z, lod);
+        }
+        // top
+        for (let x = -lod + 1; x <= lod; x++) {
+          _addRequiredChunk(x, lod, lod);
+        }
+        // right
+        for (let z = lod - 1; z >= -lod; z--) {
+          _addRequiredChunk(lod, z, lod);
+        }
+        // bottom
+        for (let x = -lod; x < lod; x++) {
+          _addRequiredChunk(x, -lod, lod);
+        }
       }
       return result;
     })();
