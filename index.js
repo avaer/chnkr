@@ -21,15 +21,16 @@ class Chunk {
 }
 
 class Chunker {
-  constructor({resolution = 32, lods = 1} = {}) {
+  constructor({resolution = 32, range = 1, useLods = false} = {}) {
     this.resolution = resolution;
-    this.lods = lods;
+    this.range = range;
+    this.useLods = useLods;
 
     this.chunks = [];
   }
 
   update(cx, cz) {
-    const {resolution, lods, chunks} = this;
+    const {resolution, range, useLods, chunks} = this;
 
     const added = [];
     const removed = [];
@@ -47,24 +48,24 @@ class Chunker {
         result.push(chunk);
       };
 
-      for (let i = 1; i <= lods; i++) {
-        const lod = i;
+      for (let radius = 1; radius <= range; radius++) {
+        const lod = useLods ? radius : 1;
 
         // left
-        for (let i = 0; i < (lod * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution), -(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), lod);
+        for (let i = 0; i < (radius * 2) - 1; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution), -(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), lod);
         }
         // front
-        for (let i = 1; i <= (lod * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), -(resolution / 2) + -((lod - 1) * resolution), lod);
+        for (let i = 1; i <= (radius * 2) - 1; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), -(resolution / 2) + -((radius - 1) * resolution), lod);
         }
         // right
-        for (let i = 1; i <= (lod * 2) - 1; i++) {
-          _addRequiredChunk((resolution / 2) + ((lod - 1) * resolution), -(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), lod);
+        for (let i = 1; i <= (radius * 2) - 1; i++) {
+          _addRequiredChunk((resolution / 2) + ((radius - 1) * resolution), -(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), lod);
         }
         // back
-        for (let i = 0; i < (lod * 2) - 1; i++) {
-          _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution) + (i * resolution), (resolution / 2) + ((lod - 1) * resolution), lod);
+        for (let i = 0; i < (radius * 2) - 1; i++) {
+          _addRequiredChunk(-(resolution / 2) - ((radius - 1) * resolution) + (i * resolution), (resolution / 2) + ((radius - 1) * resolution), lod);
         }
       }
       return result;
@@ -84,14 +85,16 @@ class Chunker {
     }
 
     // remove re-lodded chunks
-    for (let i = 0; i < requiredChunks.length; i++) {
-      const requiredChunk = requiredChunks[i];
-      const throwOutConflictingChunkIndex = chunks.findIndex(chunk => chunk.diffEquals(requiredChunk));
+    if (useLods) {
+      for (let i = 0; i < requiredChunks.length; i++) {
+        const requiredChunk = requiredChunks[i];
+        const throwOutConflictingChunkIndex = chunks.findIndex(chunk => chunk.diffEquals(requiredChunk));
 
-      if (throwOutConflictingChunkIndex !== -1) {
-        const throwOutConflictingChunk = chunks[throwOutConflictingChunkIndex];
-        removed.push(throwOutConflictingChunk);
-        chunks.splice(throwOutConflictingChunkIndex, 1);
+        if (throwOutConflictingChunkIndex !== -1) {
+          const throwOutConflictingChunk = chunks[throwOutConflictingChunkIndex];
+          removed.push(throwOutConflictingChunk);
+          chunks.splice(throwOutConflictingChunkIndex, 1);
+        }
       }
     }
 
