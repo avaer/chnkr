@@ -51,7 +51,7 @@ class Chunker {
         const lod = i;
 
         // left
-        for (let i = 0; i < lod; i++) {
+        for (let i = 0; i < (lod * 2) - 1; i++) {
           _addRequiredChunk(-(resolution / 2) - ((lod - 1) * resolution), (resolution / 2) + ((lod - 1) * resolution) - (i * resolution), lod);
         }
         /* // top
