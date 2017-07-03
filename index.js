@@ -91,7 +91,7 @@ class Chunker {
 
       if (conflictingChunk) {
         conflictingChunk.lod = requiredChunk.lod;
-        relodded.add(conflictingChunk);
+        relodded.push(conflictingChunk);
       }
     }
 
