@@ -21,19 +21,19 @@ class Chunk {
 }
 
 class Chunker {
-  constructor({resolution = 32, range = 1, useLods = false} = {}) {
+  constructor({resolution = 32, range = 1} = {}) {
     this.resolution = resolution;
     this.range = range;
-    this.useLods = useLods;
 
     this.chunks = [];
   }
 
   update(cx, cz) {
-    const {resolution, range, useLods, chunks} = this;
+    const {resolution, range, chunks} = this;
 
     const added = [];
     const removed = [];
+    const relodded = [];
 
     // find required chunks
     const requiredChunks = (() => {
@@ -49,24 +49,23 @@ class Chunker {
       };
 
       for (let radius = 1; radius <= range; radius++) {
-        const lod = useLods ? radius : 1;
         const baseDistance = (resolution / 2) + ((radius - 1) * resolution);
 
         // left
         for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance, -baseDistance + (i * resolution), lod);
+          _addRequiredChunk(-baseDistance, -baseDistance + (i * resolution), radius);
         }
         // front
         for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance + (i * resolution), -baseDistance, lod);
+          _addRequiredChunk(-baseDistance + (i * resolution), -baseDistance, radius);
         }
         // right
         for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk(baseDistance, -baseDistance + (i * resolution), lod);
+          _addRequiredChunk(baseDistance, -baseDistance + (i * resolution), radius);
         }
         // back
         for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance + (i * resolution), baseDistance, lod);
+          _addRequiredChunk(-baseDistance + (i * resolution), baseDistance, radius);
         }
       }
       return result;
@@ -86,16 +85,13 @@ class Chunker {
     }
 
     // remove re-lodded chunks
-    if (useLods) {
-      for (let i = 0; i < requiredChunks.length; i++) {
-        const requiredChunk = requiredChunks[i];
-        const throwOutConflictingChunkIndex = chunks.findIndex(chunk => chunk.diffEquals(requiredChunk));
+    for (let i = 0; i < requiredChunks.length; i++) {
+      const requiredChunk = requiredChunks[i];
+      const conflictingChunk = chunks.find(chunk => chunk.diffEquals(requiredChunk));
 
-        if (throwOutConflictingChunkIndex !== -1) {
-          const throwOutConflictingChunk = chunks[throwOutConflictingChunkIndex];
-          removed.push(throwOutConflictingChunk);
-          chunks.splice(throwOutConflictingChunkIndex, 1);
-        }
+      if (conflictingChunk) {
+        conflictingChunk.lod = requiredChunk.lod;
+        relodded.add(conflictingChunk);
       }
     }
 
@@ -112,6 +108,7 @@ class Chunker {
     return {
       added,
       removed,
+      relodded,
     };
   }
 }
