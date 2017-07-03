@@ -1,6 +1,6 @@
 {
   "name": "chnkr",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Chunk tracking for minecraft-like worlds",
   "main": "index.js",
   "dependencies": {},
