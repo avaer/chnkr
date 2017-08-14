@@ -1,22 +1,10 @@
+const mod = require('mod-loop');
+
 class Chunk {
   constructor(x, z, lod) {
     this.x = x;
     this.z = z;
     this.lod = lod;
-
-    this.data = null;
-  }
-
-  equals(chunk) {
-    return this.x === chunk.x && this.z === chunk.z && this.lod === chunk.lod;
-  }
-
-  softEquals(chunk) {
-    return this.x === chunk.x && this.z === chunk.z;
-  }
-
-  diffEquals(chunk) {
-    return this.x === chunk.x && this.z === chunk.z && this.lod !== chunk.lod;
   }
 }
 
@@ -25,7 +13,7 @@ class Chunker {
     this.resolution = resolution;
     this.range = range;
 
-    this.chunks = [];
+    this.chunks = {};
   }
 
   update(cx, cz) {
@@ -37,7 +25,7 @@ class Chunker {
 
     // find required chunks
     const requiredChunks = (() => {
-      const result = [];
+      const result = {};
 
       const _addRequiredChunk = (dx, dz, lod) => {
         const chunk = new Chunk(
@@ -45,11 +33,11 @@ class Chunker {
           Math.floor((cz + dz) / resolution),
           lod
         );
-        result.push(chunk);
+        result[_getChunkIndex(chunk.x, chunk.z)] = chunk;
       };
 
       for (let radius = 1; radius <= range; radius++) {
-        const baseDistance = (resolution / 2) + ((radius - 1) * resolution);
+        const baseDistance = (resolution / 4) + ((radius - 1) * resolution);
 
         // left
         for (let i = 0; i < (radius * 2) - 1; i++) {
@@ -72,37 +60,51 @@ class Chunker {
     })();
 
     // remove outranged chunks
-    const oldChunks = chunks.slice();
-    chunks.length = 0;
-    for (let i = 0; i < oldChunks.length; i++) {
-      const chunk = oldChunks[i];
+    let updated = false;
+    for (const index in chunks) {
+      const chunk = chunks[index];
 
-      if (requiredChunks.some(requiredChunk => requiredChunk.softEquals(chunk))) {
-        chunks.push(chunk);
-      } else {
+      if (!requiredChunks[index]) {
         removed.push(chunk);
+        chunks[index] = null;
+
+        updated = true;
       }
     }
 
-    // remove re-lodded chunks
-    for (let i = 0; i < requiredChunks.length; i++) {
-      const requiredChunk = requiredChunks[i];
-      const conflictingChunk = chunks.find(chunk => chunk.diffEquals(requiredChunk));
+    // flag relodded chunks
+    for (const index in requiredChunks) {
+      const requiredChunk = requiredChunks[index];
+      const existingChunk = chunks[index];
 
-      if (conflictingChunk) {
-        conflictingChunk.lod = requiredChunk.lod;
-        relodded.push(conflictingChunk);
+      if (existingChunk && existingChunk.lod !== requiredChunk.lod) {
+        existingChunk.lod = requiredChunk.lod;
+        relodded.push(existingChunk);
       }
     }
 
     // add new chunks
-    for (let i = 0; i < requiredChunks.length; i++) {
-      const requiredChunk = requiredChunks[i];
+    for (const index in requiredChunks) {
+      const requiredChunk = requiredChunks[index];
 
-      if (!chunks.some(chunk => chunk.softEquals(requiredChunk))) {
+      if (!chunks[index]) {
         added.push(requiredChunk);
-        chunks.push(requiredChunk);
+        chunks[index] = requiredChunk;
+
+        updated = true;
       }
+    }
+
+    // compute new chunks
+    if (updated) {
+      const newChunks = {};
+      for (const index in chunks) {
+        const chunk = chunks[index];
+        if (chunk) {
+          newChunks[index] = chunk;
+        }
+      }
+      this.chunks = newChunks;
     }
 
     return {
@@ -112,6 +114,7 @@ class Chunker {
     };
   }
 }
+const _getChunkIndex = (x, z) => (mod(x, 0xFFFF) << 16) | mod(z, 0xFFFF);
 
 const _makeChunker = options => new Chunker(options);
 

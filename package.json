@@ -3,7 +3,9 @@
   "version": "0.0.13",
   "description": "Chunk tracking for minecraft-like worlds",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "mod-loop": "0.0.2"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
