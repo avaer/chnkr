@@ -16,6 +16,10 @@ class Chunker {
     this.chunks = {};
   }
 
+  getChunk(x, z) {
+    return this.chunks[_getChunkIndex(x, z)];
+  }
+
   update(cx, cz) {
     const {resolution, range, chunks} = this;
 
