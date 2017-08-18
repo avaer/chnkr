@@ -5,6 +5,7 @@ class Chunk {
     this.x = x;
     this.z = z;
     this.lod = lod;
+    this.lastLod = lod;
   }
 }
 
@@ -82,6 +83,7 @@ class Chunker {
       const existingChunk = chunks[index];
 
       if (existingChunk && existingChunk.lod !== requiredChunk.lod) {
+        existingChunk.lastLod = existingChunk.lod;
         existingChunk.lod = requiredChunk.lod;
         relodded.push(existingChunk);
       }
