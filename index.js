@@ -32,33 +32,38 @@ class Chunker {
     const requiredChunks = (() => {
       const result = {};
 
+      const width = range + 1;
+      const widthHalf = Math.ceil(width / 2);
+      const widthHalfFloor = Math.floor(width / 2);
+
+      const ox = Math.round(cx / resolution) - widthHalfFloor;
+      const oz = Math.round(cz / resolution) - widthHalfFloor;
+
       const _addRequiredChunk = (dx, dz, lod) => {
         const chunk = new Chunk(
-          Math.floor((cx + dx) / resolution),
-          Math.floor((cz + dz) / resolution),
+          ox + dx,
+          oz + dz,
           lod
         );
         result[_getChunkIndex(chunk.x, chunk.z)] = chunk;
       };
 
-      for (let radius = 1; radius <= range; radius++) {
-        const baseDistance = (resolution / 4) + ((radius - 1) * resolution);
+      for (let level = widthHalf - 1; level >= 0; level--) {
+        const start = level;
+        const end = width - level;
+        const lod = widthHalf - level;
 
-        // left
-        for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance, -baseDistance + (i * resolution), radius);
+        for (let l = width-level-2; l > width - 1 - end; l--) {
+          _addRequiredChunk(start, l, lod);
         }
-        // front
-        for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance + (i * resolution), -baseDistance, radius);
+        for (let k = start+1; k < end - 1; k++) {
+          _addRequiredChunk(k, width - end, lod);
         }
-        // right
-        for (let i = 1; i <= (radius * 2) - 1; i++) {
-          _addRequiredChunk(baseDistance, -baseDistance + (i * resolution), radius);
+        for (let j = width - end; j < width - level - 1; j++) {
+          _addRequiredChunk(end - 1, j, lod);
         }
-        // back
-        for (let i = 0; i < (radius * 2) - 1; i++) {
-          _addRequiredChunk(-baseDistance + (i * resolution), baseDistance, radius);
+        for (let i = end - 1; i >= start; i--) {
+          _addRequiredChunk(i, width - 1 - level, lod);
         }
       }
       return result;
