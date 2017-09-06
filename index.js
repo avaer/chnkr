@@ -24,89 +24,96 @@ class Chunker {
   update(cx, cz) {
     const {resolution, range, chunks} = this;
 
+    const ox = Math.round(cx / resolution);
+    const oz = Math.round(cz / resolution);
+
     const added = [];
     const removed = [];
     const relodded = [];
 
-    // find required chunks
-    const requiredChunks = (() => {
-      const result = {};
-
-      const width = range + 1;
-      const widthHalf = Math.ceil(width / 2);
-      const widthHalfFloor = Math.floor(width / 2);
-
-      const ox = Math.round(cx / resolution) - widthHalfFloor;
-      const oz = Math.round(cz / resolution) - widthHalfFloor;
-
-      const _addRequiredChunk = (dx, dz, lod) => {
-        const chunk = new Chunk(
-          ox + dx,
-          oz + dz,
-          lod
-        );
-        result[_getChunkIndex(chunk.x, chunk.z)] = chunk;
-      };
-
-      for (let level = widthHalf - 1; level >= 0; level--) {
-        const start = level;
-        const end = width - level;
-        const lod = widthHalf - level;
-
-        for (let l = width-level-2; l > width - 1 - end; l--) {
-          _addRequiredChunk(start, l, lod);
+    const X = range;
+    const Y = range;
+    const Xhalf = X/2;
+    const Yhalf = Y/2;
+    const _spiral = fn => {
+      let x, y, dx, dy;
+      x = y = dx = 0;
+      dy = -1;
+      let t = Math.max(X, Y);
+      const maxI = t*t;
+      for (let i = 0; i < maxI; i++){
+        if ((-Xhalf <= x) && (x <= Xhalf) && (-Yhalf <= y) && (y <= Yhalf)) {
+          if (fn(-y, x) === false) {
+            return false;
+          }
         }
-        for (let k = start+1; k < end - 1; k++) {
-          _addRequiredChunk(k, width - end, lod);
+        if ((x == y) || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1-y))) {
+          t = dx;
+          dx = -dy;
+          dy = t;
         }
-        for (let j = width - end; j < width - level - 1; j++) {
-          _addRequiredChunk(end - 1, j, lod);
-        }
-        for (let i = end - 1; i >= start; i--) {
-          _addRequiredChunk(i, width - 1 - level, lod);
-        }
+        x += dx;
+        y += dy;
       }
-      return result;
-    })();
+      return true;
+    };
+    const minX = ox - Math.floor((X - 1) / 2);
+    const maxX = ox + Math.floor(X / 2);
+    const minY = oz - Math.floor(Y / 2);
+    const maxY = oz + Math.floor((Y - 1) / 2);
 
     // remove outranged chunks
     let updated = false;
     for (const index in chunks) {
       const chunk = chunks[index];
 
-      if (!requiredChunks[index]) {
-        removed.push(chunk);
+      if (chunk.x < minX || chunk.x > maxX || chunk.z < minY || chunk.z > maxY) {
         chunks[index] = null;
+        removed.push(chunk);
 
         updated = true;
       }
     }
 
     // flag relodded chunks
-    for (const index in requiredChunks) {
-      const requiredChunk = requiredChunks[index];
+    for (const index in chunks) {
       const existingChunk = chunks[index];
 
-      if (existingChunk && existingChunk.lod !== requiredChunk.lod) {
-        existingChunk.lastLod = existingChunk.lod;
-        existingChunk.lod = requiredChunk.lod;
-        relodded.push(existingChunk);
+      if (existingChunk) {
+        const expectedLod = Math.max(Math.abs(existingChunk.x - ox), Math.abs(existingChunk.z - oz)) + 1;
+
+        if (existingChunk.lod !== expectedLod) {
+          existingChunk.lastLod = existingChunk.lod;
+          existingChunk.lod = expectedLod;
+          relodded.push(existingChunk);
+        }
       }
     }
 
     // add new chunks
-    for (const index in requiredChunks) {
-      const requiredChunk = requiredChunks[index];
+    const done = _spiral((dx, dz) => {
+      const ax = ox + dx;
+      const az = oz + dz;
+      const index = _getChunkIndex(ax, az);
 
       if (!chunks[index]) {
-        added.push(requiredChunk);
-        chunks[index] = requiredChunk;
+        const chunk = new Chunk(
+          ax,
+          az,
+          Math.max(Math.abs(dx), Math.abs(dz)) + 1
+        );
+        chunks[index] = chunk;
+        added.push(chunk);
 
         updated = true;
-      }
-    }
 
-    // compute new chunks
+        return false;
+      } else {
+        return true;
+      }
+    });
+
+    // gc chunks index
     if (updated) {
       const newChunks = {};
       for (const index in chunks) {
@@ -122,6 +129,7 @@ class Chunker {
       added,
       removed,
       relodded,
+      done,
     };
   }
 }
