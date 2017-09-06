@@ -10,7 +10,7 @@ class Chunk {
 }
 
 class Chunker {
-  constructor({resolution = 32, range = 1} = {}) {
+  constructor({resolution = 16, range = 1} = {}) {
     this.resolution = resolution;
     this.range = range;
 
